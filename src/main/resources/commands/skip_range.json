@@ -1,0 +1,20 @@
+{
+  "name": "skip_range",
+  "description": "Skip songs in range",
+  "options": [
+    {
+      "name": "start_number",
+      "description": "Start",
+      "type": 4,
+      "required": true,
+      "min_value": 1
+    },
+    {
+      "name": "end_number",
+      "description": "End",
+      "type": 4,
+      "required": true,
+      "min_value": 3
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "play",
+  "description": "Start playing",
+  "options": [
+    {
+      "name": "query",
+      "description": "Insert your youtube link here!",
+      "type": 3,
+      "required": false
+    },
+    {
+      "name": "priority",
+      "description": "Whether to queue at the top of the queue",
+      "type": 5,
+      "required": false
+    },
+    {
+      "name": "number",
+      "description": "Enter a track number in queue you want to play",
+      "type": 4,
+      "required": false,
+      "min_value": 1
+    }
+  ]
+}

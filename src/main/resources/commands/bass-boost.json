@@ -1,0 +1,14 @@
+{
+  "name": "bass_boost",
+  "description": "Change bass boost",
+  "options": [
+    {
+      "name": "value",
+      "description": "Insert a value between 1-300",
+      "type": 4,
+      "required": true,
+      "min_value": 1,
+      "max_value": 300
+    }
+  ]
+}

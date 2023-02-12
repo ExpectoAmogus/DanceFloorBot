@@ -1,0 +1,13 @@
+{
+  "name": "skip_first",
+  "description": "Skip first song in queue",
+  "options": [
+    {
+      "name": "number",
+      "description": "Number of first tracks in queue to skip",
+      "type": 4,
+      "required": false,
+      "min_value": 1
+    }
+  ]
+}

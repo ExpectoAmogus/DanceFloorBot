@@ -1,0 +1,13 @@
+{
+  "name": "skip",
+  "description": "Skip current song",
+  "options": [
+    {
+      "name": "number",
+      "description": "Number of track to skip",
+      "type": 4,
+      "required": false,
+      "min_value": 1
+    }
+  ]
+}
