@@ -97,18 +97,18 @@ public class PlayCommand implements SlashCommand {
                                 event.reply()
                                         .withEphemeral(true)
                                         .withEmbeds(messageBuilder.getBlankBuilder("Ok"))
-                                        .then();
+                                        .block();
                             } else {
                                 event.reply()
                                         .withEphemeral(true)
                                         .withEmbeds(messageBuilder.getBlankBuilder("You provide wrong number"))
-                                        .then();
+                                        .block();
                             }
                         } else {
                             event.reply()
                                     .withEphemeral(true)
                                     .withEmbeds(messageBuilder.getBlankBuilder("The queue is empty"))
-                                    .then();
+                                    .block();
                         }
                     } else if (L_number == null && trackUrl != null) {
                         PLAYER_MANAGER.loadItem(trackUrl, new AudioLoadResultHandler() {
@@ -119,7 +119,7 @@ public class PlayCommand implements SlashCommand {
                                         .withEphemeral(true)
                                         .withEmbeds(messageBuilder.getBlankBuilderWithTrack(
                                                 "Track added to the queue", track))
-                                        .subscribe();
+                                        .block();
                             }
 
                             @Override
@@ -137,7 +137,7 @@ public class PlayCommand implements SlashCommand {
                                         .withEphemeral(true)
                                         .withEmbeds(messageBuilder.getBlankBuilderWithPlayList(
                                                 "Playlist added to the queue", playlist))
-                                        .subscribe();
+                                        .block();
                             }
 
                             @Override
@@ -146,7 +146,7 @@ public class PlayCommand implements SlashCommand {
                                         .withEphemeral(true)
                                         .withEmbeds(messageBuilder.getBlankBuilder(
                                                 "No tracks found with the URL" + trackUrl))
-                                        .subscribe();
+                                        .block();
                             }
 
                             @Override
@@ -155,7 +155,7 @@ public class PlayCommand implements SlashCommand {
                                         .withEphemeral(true)
                                         .withEmbeds(messageBuilder.getBlankBuilder(
                                                 "Failed to load track" + exception.getMessage()))
-                                        .subscribe();
+                                        .block();
                             }
                         });
                     } else if (L_number == null && !priority) {
@@ -164,12 +164,12 @@ public class PlayCommand implements SlashCommand {
                             event.reply()
                                     .withEphemeral(true)
                                     .withEmbeds(messageBuilder.getBlankBuilder("Ok"))
-                                    .subscribe();
+                                    .block();
                         } else {
                             event.reply()
                                     .withEphemeral(true)
                                     .withEmbeds(messageBuilder.getBlankBuilder("Hi!"))
-                                    .subscribe();
+                                    .block();
                         }
 
                     } else {
@@ -177,7 +177,7 @@ public class PlayCommand implements SlashCommand {
                                 .withEphemeral(true)
                                 .withEmbeds(messageBuilder.getBlankBuilder(
                                         "You must provide either a track URL or a number"))
-                                .subscribe();
+                                .block();
                     }
                     return Mono.firstWithSignal(onDisconnect);
                 });
