@@ -170,5 +170,8 @@ public final class AudioTrackScheduler extends AudioEventAdapter {
                 playedTracks.add(track);
             }
         }
+        else {
+            playedTracks.add(track);
+        }
     }
 }
