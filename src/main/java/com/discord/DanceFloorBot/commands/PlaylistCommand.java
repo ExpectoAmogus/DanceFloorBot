@@ -36,8 +36,10 @@ public class PlaylistCommand implements SlashCommand {
     private List<EmbedCreateFields.Field> fields;
     private TextChannel textChannel;
     private List<AudioTrack> audioTracks;
+    private List<AudioTrack> playedTracks;
+    private Optional<AudioTrack> currentTrack;
 
-    private Mono<Void> onClick(Optional<AudioTrack> currentTrack, AudioTrackScheduler audioTrackScheduler) {
+    private Mono<Void> onClick(AudioTrackScheduler audioTrackScheduler) {
         return textChannel.getClient().getEventDispatcher().on(ButtonInteractionEvent.class, buttonEvent -> {
                     switch (buttonEvent.getCustomId()) {
                         case "prev-button" -> {
@@ -48,6 +50,7 @@ public class PlaylistCommand implements SlashCommand {
                                 page--;
                                 changePage();
                             }
+                            currentTrack = audioTrackScheduler.getCurrentTrack();
                             String trackDuration = trackUtilityService.getTrackDuration(currentTrack);
                             return currentTrack.map(track -> buttonEvent.edit()
                                     .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", ">\t" + track.getInfo().title + "\t" + trackDuration, fields, page, totalPages, audioTrackScheduler.isShuffle()))).orElseGet(() -> buttonEvent.edit()
@@ -60,6 +63,7 @@ public class PlaylistCommand implements SlashCommand {
                                 page++;
                                 changePage();
                             }
+                            currentTrack = audioTrackScheduler.getCurrentTrack();
                             String trackDuration = trackUtilityService.getTrackDuration(currentTrack);
                             return currentTrack.map(track -> buttonEvent.edit()
                                     .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", ">\t" + track.getInfo().title + "\t" + trackDuration, fields, page, totalPages, audioTrackScheduler.isShuffle()))).orElseGet(() -> buttonEvent.edit()
@@ -67,11 +71,33 @@ public class PlaylistCommand implements SlashCommand {
                         }
                         case "update-button" -> {
                             changePage();
+                            currentTrack = audioTrackScheduler.getCurrentTrack();
                             String trackDuration = trackUtilityService.getTrackDuration(currentTrack);
                             return currentTrack.map(track -> buttonEvent.edit()
                                     .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", ">\t" + track.getInfo().title + "\t" + trackDuration, fields, page, totalPages, audioTrackScheduler.isShuffle()))).orElseGet(() -> buttonEvent.edit()
                                     .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", "", fields, page, totalPages, audioTrackScheduler.isShuffle())));
                         }
+                        case "switch-list" -> {
+                            if (audioTrackScheduler.isShowingPlayedTracks()) {
+                                audioTrackScheduler.setShowingPlayedTracks(false);
+                                changePage();
+                                currentTrack = audioTrackScheduler.getCurrentTrack();
+                                String trackDuration = trackUtilityService.getTrackDuration(currentTrack);
+                                return currentTrack.map(track -> buttonEvent.edit()
+                                        .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", ">\t" + track.getInfo().title + "\t" + trackDuration, fields, page, totalPages, audioTrackScheduler.isShuffle()))).orElseGet(() -> buttonEvent.edit()
+                                        .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", "", fields, page, totalPages, audioTrackScheduler.isShuffle())));
+
+                            } else {
+                                audioTrackScheduler.setShowingPlayedTracks(true);
+                                changePageForPlayedTracks();
+                                currentTrack = audioTrackScheduler.getCurrentTrack();
+                                String trackDuration = trackUtilityService.getTrackDuration(currentTrack);
+                                return currentTrack.map(track -> buttonEvent.edit()
+                                        .withEmbeds(messageBuilder.getPlayListBuilder("Played tracks", ">\t" + track.getInfo().title + "\t" + trackDuration, fields, page, totalPages, audioTrackScheduler.isShuffle()))).orElseGet(() -> buttonEvent.edit()
+                                        .withEmbeds(messageBuilder.getPlayListBuilder("Played tracks", "", fields, page, totalPages, audioTrackScheduler.isShuffle())));
+
+                            }
+                            }
                     }
 
                     return Mono.empty();
@@ -93,8 +119,9 @@ public class PlaylistCommand implements SlashCommand {
         final VoiceChannel channel = commandMethodsHandler.getVoiceChannel(event);
         textChannel = commandMethodsHandler.getTextChannel(event);
         final AudioTrackScheduler audioTrackScheduler = GuildAudioManager.of(channel.getGuildId()).getScheduler();
-        final Optional<AudioTrack> currentTrack = audioTrackScheduler.getCurrentTrack();
         Optional<List<AudioTrack>> audioTracks = audioTrackScheduler.getQueue();
+
+        playedTracks = audioTrackScheduler.getPlayedTracks();
 
         if (audioTracks.isPresent()) {
             this.audioTracks = audioTracks.get();
@@ -105,29 +132,22 @@ public class PlaylistCommand implements SlashCommand {
             Button next = Button.primary("next-button", "->");
             String updateLabel = "⟳";
             Button update = Button.secondary("update-button", updateLabel);
+            Button switchList = Button.secondary("switch-list", "Switch List");
 
+            currentTrack = audioTrackScheduler.getCurrentTrack();
+
+            String trackDuration = trackUtilityService.getTrackDuration(currentTrack);
             if (currentTrack.isPresent()) {
-                long durationInMillis = currentTrack.get().getDuration();
-                Duration duration = Duration.ofMillis(durationInMillis);
-
-                long seconds = duration.getSeconds();
-                long absSeconds = Math.abs(seconds);
-                String formattedDuration = String.format("%02d:%02d",
-                        absSeconds / 60, absSeconds % 60);
-
-                if (seconds < 0) {
-                    formattedDuration = "-" + formattedDuration;
-                }
                 event.reply()
                         .withEphemeral(false)
-                        .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", ">\t" + currentTrack.get().getInfo().title + "\t" + formattedDuration, fields, page, totalPages, audioTrackScheduler.isShuffle()))
-                        .withComponents(ActionRow.of(prev, next, update))
+                        .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", ">\t" + currentTrack.get().getInfo().title + "\t" + trackDuration, fields, page, totalPages, audioTrackScheduler.isShuffle()))
+                        .withComponents(ActionRow.of(prev, next, update, switchList))
                         .subscribe();
             } else {
                 event.reply()
                         .withEphemeral(false)
                         .withEmbeds(messageBuilder.getPlayListBuilder("Current playlist", "", fields, page, totalPages, audioTrackScheduler.isShuffle()))
-                        .withComponents(ActionRow.of(prev, next, update))
+                        .withComponents(ActionRow.of(prev, next, update, switchList))
                         .subscribe();
             }
 
@@ -137,7 +157,7 @@ public class PlaylistCommand implements SlashCommand {
                     .withEmbeds(messageBuilder.getBlankBuilder("Queue is empty"))
                     .subscribe();
         }
-        return Mono.firstWithSignal(onClick(currentTrack, audioTrackScheduler));
+        return Mono.firstWithSignal(onClick(audioTrackScheduler));
     }
 
     private void changePage() {
@@ -166,4 +186,34 @@ public class PlaylistCommand implements SlashCommand {
             });
         }
     }
+    private void changePageForPlayedTracks() {
+        fields = new ArrayList<>();
+
+        int playedTracksStart = (page - 1) * 10;
+        int playedTracksEnd = Math.min(page * 10, playedTracks.size());
+
+        for (int i = playedTracksStart; i < playedTracksEnd; i++) {
+            AudioTrack playedTrack = playedTracks.get(i);
+            String trackDuration = trackUtilityService.getTrackDuration(Optional.ofNullable(playedTrack));
+            int finalI = i;
+            fields.add(new EmbedCreateFields.Field() {
+                @Override
+                public String name() {
+                    return "";
+                }
+
+                @Override
+                public String value() {
+                    return finalI + 1 + ".\t" + playedTrack.getInfo().title + "\t" + trackDuration;
+                }
+
+                @Override
+                public boolean inline() {
+                    return false;
+                }
+            });
+        }
+    }
+
+
 }

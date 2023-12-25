@@ -26,6 +26,7 @@ import java.util.Optional;
 public final class AudioTrackScheduler extends AudioEventAdapter {
     private final CommandMethodsHandler commandMethodsHandler = new CommandMethodsHandler();
     private final MessageBuilder messageBuilder = new MessageBuilder();
+    private final List<AudioTrack> playedTracks;
     private final List<AudioTrack> queue;
     private final AudioPlayer player;
     private ChatInputInteractionEvent event;
@@ -34,9 +35,11 @@ public final class AudioTrackScheduler extends AudioEventAdapter {
     private boolean priority = false;
     private Snowflake messageId;
     private boolean isShuffle = false;
+    private boolean showingPlayedTracks = false;
+
 
     public AudioTrackScheduler(final AudioPlayer player) {
-
+        playedTracks = Collections.synchronizedList(new LinkedList<>());
         queue = Collections.synchronizedList(new LinkedList<>());
         this.player = player;
     }
@@ -164,6 +167,7 @@ public final class AudioTrackScheduler extends AudioEventAdapter {
                 repeat();
             } else {
                 playNext();
+                playedTracks.add(track);
             }
         }
     }
